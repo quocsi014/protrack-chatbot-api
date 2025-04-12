@@ -1,0 +1,18 @@
+version: "3.8"
+
+services:
+  chroma-server:
+    image: chromadb/chroma:latest
+    container_name: chroma-server
+    restart: unless-stopped
+    ports:
+      - "8001:8000"
+    volumes:
+      - chroma_data:/chroma/chroma
+    environment:
+      - CHROMA_SERVER_AUTH_CREDENTIALS=admin:admin # Optional: Authentication
+      - CHROMA_SERVER_AUTH_PROVIDER=chromadb.auth.token.TokenAuthServerProvider
+      - CHROMA_SERVER_AUTH_TOKEN_TRANSPORT_HEADER=X-Chroma-Token
+
+volumes:
+  chroma_data:
