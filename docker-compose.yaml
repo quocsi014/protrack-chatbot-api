@@ -1,16 +1,26 @@
 version: "3.8"
 
 services:
+  app:
+    build: .
+    container_name: chatbot-api
+    ports:
+      - "8000:8000"
+    env_file:
+      - .env
+    depends_on:
+      - chroma-server
+
   chroma-server:
     image: chromadb/chroma:latest
-    container_name: chroma-server
+    container_name: chroma-server-2
     restart: unless-stopped
     ports:
       - "8001:8000"
     volumes:
       - chroma_data:/chroma/chroma
     environment:
-      - CHROMA_SERVER_AUTH_CREDENTIALS=admin:admin # Optional: Authentication
+      - CHROMA_SERVER_AUTH_CREDENTIALS=admin:admin
       - CHROMA_SERVER_AUTH_PROVIDER=chromadb.auth.token.TokenAuthServerProvider
       - CHROMA_SERVER_AUTH_TOKEN_TRANSPORT_HEADER=X-Chroma-Token
 
