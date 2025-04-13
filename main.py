@@ -1,16 +1,22 @@
-from typing import Optional
-from fastapi import Form, FastAPI, UploadFile, File, Path, HTTPException
-from fastapi.middleware.cors import CORSMiddleware
-from internal.services import DocumentationService
-from internal.adapters.chroma.repositories import DocumentationRepo
-from chromadb import HttpClient
-from sentence_transformers import SentenceTransformer
-from pydantic import BaseModel
-import sys
-import os
+import uvicorn
 from config import AppConfig
+import os
+import sys
+from sentence_transformers import SentenceTransformer
+from chromadb import HttpClient
+from internal.adapters.chroma.repositories import (
+    DocumentationRepo, MeetingRepo)
+from internal.adapters.open_router import OpenRouterClient
+from fastapi import (
+    FastAPI, APIRouter)
+from fastapi.middleware.cors import CORSMiddleware
+from internal.services import (
+    DocumentationService, ChatBotService, MeetingService)
+from internal.handlers import (
+    DocumentationHandler, MeetingHandler, ChatbotHandler)
 
 sys.path.append(os.path.dirname(__file__))
+
 app = FastAPI()
 app.add_middleware(
     CORSMiddleware,
@@ -32,123 +38,27 @@ chromaClient = HttpClient(
 
 model = SentenceTransformer('paraphrase-multilingual-MiniLM-L12-v2')
 
-docRepo = DocumentationRepo(chromaClient)
-docService = DocumentationService(docRepo, model)
+# repositories
+doc_repo = DocumentationRepo(chromaClient)
+meeting_repo = MeetingRepo(chromaClient)
 
+# clients
+open_router_client = OpenRouterClient(cfg)
 
-@app.post("/chatbot/{project_id}/files/upload")
-async def upload_file_handler(
-    project_id: str = Path(...),
-    file: UploadFile = File(...),
-    file_id: str = Form(...)
-):
-    try:
-        result = await docService.upload_file(
-            project_id=project_id,
-            file_id=file_id,
-            file=file
-        )
+# services
+doc_service = DocumentationService(doc_repo, model)
+chatbot_service = ChatBotService(doc_repo, meeting_repo, open_router_client)
+meeting_service = MeetingService(meeting_repo, model)
 
-        return {
-            "message": "Success",
-            "project_id": project_id,
-            "file_id": file_id,
-            **result
-        }
+# handlers
+doc_handler = DocumentationHandler(doc_service)
+meeting_handler = MeetingHandler(meeting_service)
+chatbot_handler = ChatbotHandler(chatbot_service)
 
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error: {str(e)}"
-        )
+v1_router = APIRouter(prefix="/chatbot/api/v1/{project_id}")
 
+v1_router.include_router(doc_handler.router, prefix="/docs")
+v1_router.include_router(meeting_handler.router, prefix="/meetings")
+v1_router.include_router(chatbot_handler.router, prefix="/chat")
 
-@app.delete("/chatbot/{project_id}/files/{file_id}")
-async def delete_file_handler(
-    project_id: str = Path(...),
-    file_id: str = Path(...)
-):
-    try:
-        result = docService.delete_file(
-            project_id=project_id,
-            file_id=file_id
-        )
-
-        if result["status"] == "not_found":
-            raise HTTPException(
-                status_code=404,
-                detail="No files found"
-            )
-
-        return {
-            "message": "Success",
-            "project_id": project_id,
-            "file_id": file_id,
-            **result
-        }
-
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error: {str(e)}"
-        )
-
-
-class QueryRequest(BaseModel):
-    query_text: str
-    top_k: Optional[int] = 3
-
-
-@app.post("/chatbot/{project_id}/query")
-async def query_documents_handler(
-    project_id: str = Path(...),
-    request: QueryRequest = ...
-):
-    try:
-        results = docService.query_documents(
-            project_id=project_id,
-            query_text=request.query_text,
-            top_k=request.top_k
-        )
-
-        return {
-            "project_id": project_id,
-            "query": request.query_text,
-            "results": results
-        }
-
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error: {str(e)}"
-        )
-
-
-@app.get("/chatbot/{project_id}/files/{file_id}")
-async def get_file_content_handler(
-    project_id: str = Path(...),
-    file_id: str = Path(...)
-):
-    try:
-        documents = docService.get_file_content(project_id, file_id)
-
-        return {
-            "project_id": project_id,
-            "file_id": file_id,
-            "documents": documents,
-            "count": len(documents)
-        }
-
-    except HTTPException as he:
-        raise he
-    except Exception as e:
-        raise HTTPException(
-            status_code=500,
-            detail=f"Error: {str(e)}"
-        )
+app.include_router(v1_router)

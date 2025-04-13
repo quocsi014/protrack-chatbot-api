@@ -5,8 +5,8 @@ from typing import List
 
 class DocumentationRepo:
     def __init__(self, client: HttpClient):
-        self.client = client
-        self.collection = self.client.get_or_create_collection(
+        self.__client = client
+        self.__collection = self.__client.get_or_create_collection(
             name="docs",
             embedding_function=None
         )
@@ -26,7 +26,7 @@ class DocumentationRepo:
 
         ids = [f"{project_id}-{file_id}-{uuid.uuid4()}" for _ in texts]
 
-        self.collection.add(
+        self.__collection.add(
             ids=ids,
             documents=texts,
             embeddings=embeddings,
@@ -34,7 +34,7 @@ class DocumentationRepo:
         )
 
     def delete_by_file(self, project_id: str, file_id: str) -> int:
-        results = self.collection.get(
+        results = self.__collection.get(
             where={
                 "$and": [
                     {"project_id": {"$eq": project_id}},
@@ -46,11 +46,11 @@ class DocumentationRepo:
         if not results["ids"]:
             return 0
 
-        self.collection.delete(ids=results["ids"])
+        self.__collection.delete(ids=results["ids"])
         return len(results["ids"])
 
-    def get_file_documents(self, project_id: str, file_id: str) -> List[str]:
-        results = self.collection.get(
+    def get_file_document(self, project_id: str, file_id: str) -> List[str]:
+        results = self.__collection.get(
             where={
                 "$and": [
                     {"project_id": {"$eq": project_id}},
@@ -60,22 +60,59 @@ class DocumentationRepo:
         )
         return results.get("documents", [])
 
+    def get_file_documents(self, project_id: str,
+                           file_ids: List[str]) -> List[str]:
+        results = self.__collection.get(
+            where={
+                "$and": [
+                    {"project_id": {"$eq": project_id}},
+                    {"file_id": {"$in": file_ids}}
+                ]
+            }
+        )
+        return results.get("documents", [])
+
+    def get_meeting_content(self,
+                            project_id: str,
+                            meeting_id: str
+                            ) -> List[str]:
+        results = self.__collection.get(
+            where={
+                "$and": [
+                    {"project_id": {"$eq": project_id}},
+                    {"meeting_id": {"$eq": meeting_id}}
+                ]
+            }
+        )
+        return results.get("documents", [])
+
     def query(
         self,
         project_id: str,
+        file_ids: List[str],
+        meeting_ids: List[str],
         query_embedding: List[float],
         top_k: int = 3
     ) -> List[str]:
-        results = self.collection.query(
+        where_clause = {"project_id": {"$eq": project_id}}
+
+        if file_ids and file_ids.__len__ > 0:
+            where_clause["file_id"] = {"$in": file_ids}
+
+        if meeting_ids and meeting_ids.__len__ > 0:
+            where_clause["meeting_id"] = {"$in": meeting_ids}
+
+        results = self.__collection.query(
             query_embeddings=[query_embedding],
             n_results=top_k,
-            where={"project_id": {"$eq": project_id}},
-            include=["documents", "distances", "metadatas"]  # Thêm metadata
+            where=where_clause,
+            include=["documents", "distances", "metadatas"]
         )
 
-        min_distance = 1.5
+        # min_distance = 1.5
         filtered = [
-            doc for doc, dist in zip(results["documents"][0], results["distances"][0])
+            doc for doc, dist in zip(results["documents"][0],
+                                     results["distances"][0])
             # if dist < min_distance
         ]
 
