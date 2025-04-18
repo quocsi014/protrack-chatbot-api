@@ -4,6 +4,7 @@ from typing import List
 from fastapi import UploadFile, HTTPException
 from internal.adapters.chroma.repositories import DocumentationRepo
 import io
+from internal.domains import File
 
 
 class DocumentationService:
@@ -14,8 +15,7 @@ class DocumentationService:
     async def upload_file(
         self,
         project_id: str,
-        file_id: str,
-        file: UploadFile
+        file: File,
     ) -> dict:
         try:
             content = await file.read()
@@ -32,14 +32,16 @@ class DocumentationService:
 
             self.__repo.add_documents(
                 project_id=project_id,
-                file_id=file_id,
+                file_id=file.file_id,
+                file_name=file.file_name,
                 texts=chunks,
                 embeddings=embeddings
             )
 
             return {
                 "project_id": project_id,
-                "file_id": file_id,
+                "file_id": file.file_id,
+                "file_name": file.file_name,
                 "chunks": len(chunks),
                 "status": "success"
             }

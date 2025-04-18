@@ -1,6 +1,7 @@
 import uuid
 from chromadb import HttpClient
 from typing import List
+from internal.domains import File
 
 
 class DocumentationRepo:
@@ -15,13 +16,15 @@ class DocumentationRepo:
         self,
         project_id: str,
         file_id: str,
+        file_name: str,
         texts: List[str],
         embeddings: List[List[float]]
     ):
         metadatas = [{
             "source": "user_upload",
             "project_id": project_id,
-            "file_id": file_id
+            "file_id": file_id,
+            "file_name": file_name,
         } for _ in texts]
 
         ids = [f"{project_id}-{file_id}-{uuid.uuid4()}" for _ in texts]
@@ -49,7 +52,7 @@ class DocumentationRepo:
         self.__collection.delete(ids=results["ids"])
         return len(results["ids"])
 
-    def get_file_document(self, project_id: str, file_id: str) -> List[str]:
+    def get_file_document(self, project_id: str, file_id: str) -> File:
         results = self.__collection.get(
             where={
                 "$and": [
@@ -58,7 +61,10 @@ class DocumentationRepo:
                 ]
             }
         )
-        return results.get("documents", [])
+        return File(file_id=file_id,
+                    file_name=results.get("metadatas", [{}])[
+                        0].get("file_name"),
+                    contents=results.get("documents", []),)
 
     def get_file_documents(self, project_id: str,
                            file_ids: List[str]) -> List[str]:
@@ -90,7 +96,6 @@ class DocumentationRepo:
         self,
         project_id: str,
         file_ids: List[str],
-        meeting_ids: List[str],
         query_embedding: List[float],
         top_k: int = 3
     ) -> List[str]:
@@ -98,9 +103,6 @@ class DocumentationRepo:
 
         if file_ids and file_ids.__len__ > 0:
             where_clause["file_id"] = {"$in": file_ids}
-
-        if meeting_ids and meeting_ids.__len__ > 0:
-            where_clause["meeting_id"] = {"$in": meeting_ids}
 
         results = self.__collection.query(
             query_embeddings=[query_embedding],

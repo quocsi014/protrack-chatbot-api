@@ -64,3 +64,31 @@ class MeetingRepo:
             }
         )
         return results.get("documents", [])
+
+    def query(
+        self,
+        project_id: str,
+        file_ids: List[str],
+        query_embedding: List[float],
+        top_k: int = 3
+    ) -> List[str]:
+        where_clause = {"project_id": {"$eq": project_id}}
+
+        if file_ids and file_ids.__len__ > 0:
+            where_clause["meering_id"] = {"$in": file_ids}
+
+        results = self.__collection.query(
+            query_embeddings=[query_embedding],
+            n_results=top_k,
+            where=where_clause,
+            include=["documents", "distances", "metadatas"]
+        )
+
+        # min_distance = 1.5
+        filtered = [
+            doc for doc, dist in zip(results["documents"][0],
+                                     results["distances"][0])
+            # if dist < min_distance
+        ]
+
+        return filtered[:top_k]

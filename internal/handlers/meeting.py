@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Form, UploadFile, File, Path, HTTPException
 from internal.services import MeetingService
+from internal.domains import Response
 
 
 class MeetingHandler:
@@ -29,12 +30,7 @@ class MeetingHandler:
                 meeting_id=meeting_id,
                 file=file
             )
-            return {
-                "message": "Success",
-                "project_id": project_id,
-                "meeting_id": meeting_id,
-                **result
-            }
+            return Response(None, result)
         except HTTPException as he:
             raise he
         except Exception as e:
@@ -53,12 +49,7 @@ class MeetingHandler:
             if result["status"] == "not_found":
                 raise HTTPException(
                     status_code=404, detail="No meetings found")
-            return {
-                "message": "Success",
-                "project_id": project_id,
-                "meeting_id": meeting_id,
-                **result
-            }
+            return Response(None, result)
         except HTTPException as he:
             raise he
         except Exception as e:

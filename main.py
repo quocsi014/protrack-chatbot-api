@@ -47,7 +47,8 @@ open_router_client = OpenRouterClient(cfg)
 
 # services
 doc_service = DocumentationService(doc_repo, model)
-chatbot_service = ChatBotService(doc_repo, meeting_repo, open_router_client)
+chatbot_service = ChatBotService(
+    doc_repo, meeting_repo, open_router_client, model)
 meeting_service = MeetingService(meeting_repo, model)
 
 # handlers

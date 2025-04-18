@@ -1,5 +1,6 @@
 from fastapi import APIRouter, Form, UploadFile, File, Path, HTTPException
 from internal.services import DocumentationService
+from internal.domains import Response
 
 
 class DocumentationHandler:
@@ -21,20 +22,15 @@ class DocumentationHandler:
         self,
         project_id: str = Path(...),
         file: UploadFile = File(...),
-        file_id: str = Form(...)
+        file_id: str = Form(...),
+        file_name: str = Form(...)
     ):
         try:
             result = await self.__doc_service.upload_file(
                 project_id=project_id,
-                file_id=file_id,
-                file=file
+                file=File(file_id=file_id, file_name=file_name, file=file)
             )
-            return {
-                "message": "Success",
-                "project_id": project_id,
-                "file_id": file_id,
-                **result
-            }
+            return Response(None, result)
         except HTTPException as he:
             raise he
         except Exception as e:
@@ -52,12 +48,7 @@ class DocumentationHandler:
             )
             if result["status"] == "not_found":
                 raise HTTPException(status_code=404, detail="No files found")
-            return {
-                "message": "Success",
-                "project_id": project_id,
-                "file_id": file_id,
-                **result
-            }
+            return Response(None, result)
         except HTTPException as he:
             raise he
         except Exception as e:
