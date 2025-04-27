@@ -66,7 +66,7 @@ class ChatBotService:
             query_embedding=query_embedding,
         )
 
-        self.__open_router_client.ask(question, file_content, meeting_content)
+        return self.__open_router_client.ask(question, file_content, meeting_content)
 
     def ask_without_rag(self,
                         project_id: str,

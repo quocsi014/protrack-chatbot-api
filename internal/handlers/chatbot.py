@@ -1,5 +1,5 @@
 from internal.services import ChatBotService
-from fastapi import APIRouter, Path, Query, Body
+from fastapi import APIRouter, Path, Body
 from internal.domains import Response
 from typing import List
 
@@ -27,7 +27,7 @@ class ChatbotHandler:
         )
 
         self.router.add_api_route(
-            "/ask/better",
+            "/ask-raw/",
             self.ask_,
             methods=["POST"]
         )
@@ -36,7 +36,7 @@ class ChatbotHandler:
         self,
         project_id: str = Path(...),
         meeting_id: str = Path(...),
-        doc_ids: List[str] = Query(default=[]),
+        doc_ids: List[str] = Body(default=[]),
     ):
         try:
             data = self.__chatbot_service.summary_meeting(
@@ -59,9 +59,9 @@ class ChatbotHandler:
 
     def ask(self,
             project_id: str = Path(...),
-            question: str = Query(),
-            file_context: List[str] = Query(default=[]),
-            meeting_context: List[str] = Query(default=[]),
+            question: str = Body(),
+            file_context: List[str] = Body(default=[]),
+            meeting_context: List[str] = Body(default=[]),
             ):
         try:
             data = self.__chatbot_service.ask_with_rag(

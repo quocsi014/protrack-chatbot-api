@@ -26,7 +26,10 @@ class MeetingService:
             if not chunks:
                 raise ValueError("Cannot split content")
 
-            embeddings = self.__embedding_model.encode(chunks).tolist()
+            embeddings = self.__embedding_model.encode(
+                chunks,
+                normalize_embeddings=True
+            ).tolist()
 
             self.__repo.sync_meeting(
                 project_id=project_id,
@@ -90,7 +93,7 @@ class MeetingService:
         from langchain.text_splitter import RecursiveCharacterTextSplitter
 
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=300,
+            chunk_size=500,
             chunk_overlap=100,
             separators=["\n\n", "\n"]
         )

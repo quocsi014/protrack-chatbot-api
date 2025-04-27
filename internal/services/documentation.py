@@ -5,11 +5,18 @@ from fastapi import UploadFile, HTTPException
 from internal.adapters.chroma.repositories import DocumentationRepo
 import io
 from internal.domains import File
+from internal.adapters.psql.repositories import FileRepo
+import aiohttp
+from tempfile import SpooledTemporaryFile
 
 
 class DocumentationService:
-    def __init__(self, repo: DocumentationRepo, embedding_model):
+    def __init__(self,
+                 repo: DocumentationRepo,
+                 psqlFileRepo: FileRepo,
+                 embedding_model):
         self.__repo = repo
+        self.__file_repo = psqlFileRepo
         self.__embedding_model = embedding_model
 
     async def upload_file(
@@ -18,17 +25,20 @@ class DocumentationService:
         file: File,
     ) -> dict:
         try:
-            content = await file.read()
+            content = await file.file.read()
             if len(content) == 0:
                 raise ValueError("Empy file")
 
-            text = self._extract_text(file.filename, content)
+            text = self._extract_text(file.file_name, content)
             chunks = self._split_text(text)
 
             if not chunks:
                 raise ValueError("Cannot split file")
 
-            embeddings = self.__embedding_model.encode(chunks).tolist()
+            embeddings = self.__embedding_model.encode(
+                chunks,
+                normalize_embeddings=True
+            ).tolist()
 
             self.__repo.add_documents(
                 project_id=project_id,
@@ -51,6 +61,23 @@ class DocumentationService:
                 status_code=400,
                 detail=f"Error: {str(e)}"
             )
+
+    async def sync_file(self, project_id: str, file: File):
+        async with aiohttp.ClientSession() as session:
+            async with session.get(file.file_url) as resp:
+                if resp.status == 200:
+                    temp = SpooledTemporaryFile()
+                    while True:
+                        chunk = await resp.content.read(1024)
+                        if not chunk:
+                            break
+                        temp.write(chunk)
+                    temp.seek(0)
+
+                    file.file = UploadFile(file=temp)
+                    return file
+                else:
+                    raise Exception(f"Không tải được file từ {file.file_url}")
 
     def delete_file(
         self,
@@ -108,12 +135,7 @@ class DocumentationService:
             )
 
     def _extract_text(self, filename: str, content: bytes) -> str:
-        if filename.endswith(".pdf"):
-            return self._extract_pdf(content)
-        elif filename.endswith(".txt"):
-            return content.decode("utf-8")
-        else:
-            raise ValueError("Invalid file")
+        return self._extract_pdf(content)
 
     def _extract_pdf(self, content: bytes) -> str:
         try:
@@ -125,7 +147,7 @@ class DocumentationService:
     def _split_text(self, text: str) -> List[str]:
 
         splitter = RecursiveCharacterTextSplitter(
-            chunk_size=300,
+            chunk_size=500,
             chunk_overlap=100,
             separators=["\n\n", "\n", ". ", " ", ""]
         )
