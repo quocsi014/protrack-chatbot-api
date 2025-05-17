@@ -48,6 +48,8 @@ class DocumentationService:
                 embeddings=embeddings
             )
 
+            self.__file_repo.update_sync_status(True, file.file_id)
+
             return {
                 "project_id": project_id,
                 "file_id": file.file_id,

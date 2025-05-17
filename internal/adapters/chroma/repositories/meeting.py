@@ -92,3 +92,12 @@ class MeetingRepo:
         ]
 
         return filtered[:top_k]
+
+    def list_synced_meeting_ids(self, project_id: str) -> List[str]:
+        results = self.__collection.get(
+            where={"project_id": {"$eq": project_id}},
+            include=["metadatas"],
+        )
+        metadatas = results.get("metadatas", [])
+        meeting_ids = {m["meeting_id"] for m in metadatas if "meeting_id" in m}
+        return list(meeting_ids)

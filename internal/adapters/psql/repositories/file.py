@@ -26,8 +26,8 @@ class FileRepo(Repo):
     def update_sync_status(self, status, file_id):
         self.cursor.execute(
             '''
-            update files set isSync = %s
+            update files set sync = %s
             where id = %s
-            ''', status, file_id
+            ''', (status, file_id)
         )
         self.conn.commit()

@@ -6,7 +6,7 @@ from chromadb import HttpClient
 from internal.adapters.chroma.repositories import (
     DocumentationRepo, MeetingRepo)
 from internal.adapters.psql.repositories import (
-    ProjectRepo, FileRepo, create_conn
+    ProjectRepo, FileRepo, create_conn, MeetingRepo as PMeetingRepo
 )
 from internal.adapters.open_router import OpenRouterClient
 from fastapi import (
@@ -50,6 +50,7 @@ meeting_repo = MeetingRepo(chromaClient)
 psql_client = create_conn(cfg)
 project_repo = ProjectRepo(psql_client)
 file_repo = FileRepo(psql_client)
+pmeeting_repo = PMeetingRepo(psql_client)
 
 # clients
 open_router_client = OpenRouterClient(cfg)
@@ -58,7 +59,7 @@ open_router_client = OpenRouterClient(cfg)
 doc_service = DocumentationService(doc_repo, file_repo, model)
 chatbot_service = ChatBotService(
     doc_repo, meeting_repo, open_router_client, model)
-meeting_service = MeetingService(meeting_repo, model)
+meeting_service = MeetingService(meeting_repo, model, pmeeting_repo, cfg)
 
 # handlers
 doc_handler = DocumentationHandler(doc_service)

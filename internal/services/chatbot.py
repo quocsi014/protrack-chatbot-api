@@ -54,17 +54,20 @@ class ChatBotService:
                      ):
 
         query_embedding = self.__embedding_model.encode([question])[0]
-        file_content = self.__doc_repo.query(
-            project_id=project_id,
-            file_ids=file_ids,
-            query_embedding=query_embedding,
-        )
+        meeting_ids, file_ids = []
+        if len(file_ids) > 0:
+            file_content = self.__doc_repo.query(
+                project_id=project_id,
+                file_ids=file_ids,
+                query_embedding=query_embedding,
+            )
 
-        meeting_content = self.__meeting_repo.query(
-            project_id=project_id,
-            file_ids=file_ids,
-            query_embedding=query_embedding,
-        )
+        if len(meeting_ids) > 0:
+            meeting_content = self.__meeting_repo.query(
+                project_id=project_id,
+                file_ids=file_ids,
+                query_embedding=query_embedding,
+            )
 
         return self.__open_router_client.ask(question, file_content, meeting_content)
 

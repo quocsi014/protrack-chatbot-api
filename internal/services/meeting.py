@@ -1,13 +1,79 @@
 from typing import List
 from fastapi import UploadFile, HTTPException
 from internal.adapters.chroma.repositories import MeetingRepo
+from internal.adapters.psql.repositories import MeetingRepo as PMeetingRepo
 import io
+import aiohttp
+from io import BytesIO
+from config import AppConfig
 
 
 class MeetingService:
-    def __init__(self, repo: MeetingRepo, embedding_model):
+    def __init__(self, repo: MeetingRepo, embedding_model, pRepo: PMeetingRepo, cfg: AppConfig):
         self.__repo = repo
         self.__embedding_model = embedding_model
+        self.__prepo = pRepo
+        self.__cfg = cfg
+
+    async def sync_meeting_with_get_data(
+        self,
+        project_id: str,
+        meeting_id: str,
+    ) -> dict:
+        try:
+
+            meeting = self.__prepo.get_meeting(meeting_id)
+            call_id = meeting.call_id
+            if not call_id:
+                raise ValueError("Missing call_id in meeting")
+
+            transcription_api = f"https://chat.stream-io-api.com/video/call/default/{call_id}/transcriptions?api_key=9wageyvh7sus"
+            headers = {
+                "accept": "application/json",
+                "Authorization": self.__cfg.STREAM_TOKEN,
+                "Stream-Auth-Type": "jwt",
+            }
+            async with aiohttp.ClientSession(headers=headers) as session:
+                async with session.get(transcription_api) as resp:
+                    if resp.status != 200:
+                        raise ValueError(
+                            f"Cannot fetch transcriptions: {resp.status}")
+                    transcription_data = await resp.json()
+
+                full_content = ""
+                for t in transcription_data.get("transcriptions", []):
+                    url = t.get("url")
+                    if not url:
+                        continue
+
+                    async with session.get(url) as file_resp:
+                        if file_resp.status != 200:
+                            print(f"Failed to fetch {url}")
+                            continue
+                        text = await file_resp.text()
+                        full_content += text.strip() + "\n"
+
+            if not full_content:
+                raise ValueError("No transcription content fetched")
+
+            full_content = "Description:\n" + (
+                meeting.des or "") + "\n" + full_content
+            fake_file = UploadFile(
+                filename="merged_transcript.txt",
+                file=BytesIO(full_content.encode("utf-8"))
+            )
+
+            return await self.sync_meeting(
+                project_id=project_id,
+                meeting_id=meeting_id,
+                file=fake_file
+            )
+
+        except Exception as e:
+            raise HTTPException(
+                status_code=400,
+                detail=f"Sync from stream failed: {str(e)}"
+            )
 
     async def sync_meeting(
         self,

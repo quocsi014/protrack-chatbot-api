@@ -2,6 +2,11 @@ from internal.services import ChatBotService
 from fastapi import APIRouter, Path, Body
 from internal.domains import Response
 from typing import List
+from pydantic import BaseModel
+
+
+class DocIdsRequest(BaseModel):
+    doc_ids: List[str] = []
 
 
 class ChatbotHandler:
@@ -36,8 +41,9 @@ class ChatbotHandler:
         self,
         project_id: str = Path(...),
         meeting_id: str = Path(...),
-        doc_ids: List[str] = Body(default=[]),
+        body: DocIdsRequest = Body(),
     ):
+        doc_ids = body.doc_ids
         try:
             data = self.__chatbot_service.summary_meeting(
                 project_id, meeting_id, doc_ids)

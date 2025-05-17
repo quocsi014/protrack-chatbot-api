@@ -1,4 +1,4 @@
-from fastapi import APIRouter, Form, UploadFile, File, Path, HTTPException
+from fastapi import APIRouter, Form, UploadFile, File, Path, Body, HTTPException
 from internal.services import MeetingService
 from internal.domains import Response
 
@@ -21,14 +21,12 @@ class MeetingHandler:
     async def sync_meeting_handler(
         self,
         project_id: str = Path(...),
-        file: UploadFile = File(...),
-        meeting_id: str = Form(...)
+        meeting_id: str = Body(...),
     ):
         try:
-            result = await self.__meeting_service.sync_meeting(
+            result = await self.__meeting_service.sync_meeting_with_get_data(
                 project_id=project_id,
                 meeting_id=meeting_id,
-                file=file
             )
             return Response(None, result)
         except HTTPException as he:
