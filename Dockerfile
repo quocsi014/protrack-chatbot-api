@@ -1,3 +1,4 @@
+
 FROM python:3
 
 WORKDIR /usr/src/app
@@ -9,4 +10,4 @@ RUN pip install hf_xet
 
 COPY . .
 
-CMD ["fastapi run main.py"]
+CMD ["fastapi", "run", "main.py"]

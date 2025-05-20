@@ -31,4 +31,4 @@ class AppConfig:
 
         self.PROTRACK_URL = os.getenv("PROTRACK_URL", "http://localhost:4000/")
 
-        self.STREAM_TOKEN = os.getenv("STREAM_TOKEN", "jeikwleji")
+        self.STREAM_TOKEN = os.getenv("STREAM_TOKEN", "yy2fqqc4zd6p")

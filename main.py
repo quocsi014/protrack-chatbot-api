@@ -56,10 +56,10 @@ pmeeting_repo = PMeetingRepo(psql_client)
 open_router_client = OpenRouterClient(cfg)
 
 # services
-doc_service = DocumentationService(doc_repo, file_repo, model)
+doc_service = DocumentationService(doc_repo, model)
 chatbot_service = ChatBotService(
     doc_repo, meeting_repo, open_router_client, model)
-meeting_service = MeetingService(meeting_repo, model, pmeeting_repo, cfg)
+meeting_service = MeetingService(meeting_repo, model, cfg)
 
 # handlers
 doc_handler = DocumentationHandler(doc_service)

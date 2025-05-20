@@ -9,30 +9,27 @@ from config import AppConfig
 
 
 class MeetingService:
-    def __init__(self, repo: MeetingRepo, embedding_model, pRepo: PMeetingRepo, cfg: AppConfig):
+    def __init__(self, repo: MeetingRepo, embedding_model, cfg: AppConfig):
         self.__repo = repo
         self.__embedding_model = embedding_model
-        self.__prepo = pRepo
         self.__cfg = cfg
 
     async def sync_meeting_with_get_data(
         self,
         project_id: str,
         meeting_id: str,
+        token: str,
+        call_id: str,
     ) -> dict:
         try:
 
-            meeting = self.__prepo.get_meeting(meeting_id)
-            call_id = meeting.call_id
-            if not call_id:
-                raise ValueError("Missing call_id in meeting")
-
-            transcription_api = f"https://chat.stream-io-api.com/video/call/default/{call_id}/transcriptions?api_key=9wageyvh7sus"
+            transcription_api = f"https://chat.stream-io-api.com/video/call/default/{call_id}/transcriptions?api_key={self.__cfg.STREAM_TOKEN}"
             headers = {
                 "accept": "application/json",
-                "Authorization": self.__cfg.STREAM_TOKEN,
+                "Authorization": token,
                 "Stream-Auth-Type": "jwt",
             }
+            print(transcription_api)
             async with aiohttp.ClientSession(headers=headers) as session:
                 async with session.get(transcription_api) as resp:
                     if resp.status != 200:
@@ -56,8 +53,6 @@ class MeetingService:
             if not full_content:
                 raise ValueError("No transcription content fetched")
 
-            full_content = "Description:\n" + (
-                meeting.des or "") + "\n" + full_content
             fake_file = UploadFile(
                 filename="merged_transcript.txt",
                 file=BytesIO(full_content.encode("utf-8"))
@@ -82,7 +77,9 @@ class MeetingService:
         file: UploadFile
     ) -> dict:
         try:
+            print("call")
             content = await file.read()
+            print("call")
             if len(content) == 0:
                 raise ValueError("Empty file")
 

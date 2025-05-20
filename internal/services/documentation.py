@@ -5,7 +5,6 @@ from fastapi import UploadFile, HTTPException
 from internal.adapters.chroma.repositories import DocumentationRepo
 import io
 from internal.domains import File
-from internal.adapters.psql.repositories import FileRepo
 import aiohttp
 from tempfile import SpooledTemporaryFile
 
@@ -13,10 +12,8 @@ from tempfile import SpooledTemporaryFile
 class DocumentationService:
     def __init__(self,
                  repo: DocumentationRepo,
-                 psqlFileRepo: FileRepo,
                  embedding_model):
         self.__repo = repo
-        self.__file_repo = psqlFileRepo
         self.__embedding_model = embedding_model
 
     async def upload_file(
@@ -47,8 +44,6 @@ class DocumentationService:
                 texts=chunks,
                 embeddings=embeddings
             )
-
-            self.__file_repo.update_sync_status(True, file.file_id)
 
             return {
                 "project_id": project_id,
