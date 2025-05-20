@@ -21,11 +21,11 @@ class AppConfig:
         )
 
         # PostgreSQL config
-        self.PSQL_HOST = os.getenv("PSQL_HOST", "localhost")
-        self.PSQL_PORT = int(os.getenv("PSQL_PORT", 5432))
-        self.PSQL_USER = os.getenv("PSQL_USER", "postgres")
-        self.PSQL_PSSWD = os.getenv("PSQL_PSSWD", "postgres")
-        self.PSQL_DB = os.getenv("PSQL_DB", "your_db_name")  # nếu có tên DB
+        # self.PSQL_HOST = os.getenv("PSQL_HOST", "localhost")
+        # self.PSQL_PORT = int(os.getenv("PSQL_PORT", 5432))
+        # self.PSQL_USER = os.getenv("PSQL_USER", "postgres")
+        # self.PSQL_PSSWD = os.getenv("PSQL_PSSWD", "postgres")
+        # self.PSQL_DB = os.getenv("PSQL_DB", "your_db_name")  # nếu có tên DB
 
         self.AUTH_JWT_SECRET = os.getenv("AUTH_JWT_SECRET")
 

@@ -47,10 +47,10 @@ meeting_repo = MeetingRepo(chromaClient)
 
 
 # psql repr
-psql_client = create_conn(cfg)
-project_repo = ProjectRepo(psql_client)
-file_repo = FileRepo(psql_client)
-pmeeting_repo = PMeetingRepo(psql_client)
+# psql_client = create_conn(cfg)
+# project_repo = ProjectRepo(psql_client)
+# file_repo = FileRepo(psql_client)
+# pmeeting_repo = PMeetingRepo(psql_client)
 
 # clients
 open_router_client = OpenRouterClient(cfg)
@@ -67,7 +67,7 @@ meeting_handler = MeetingHandler(meeting_service)
 chatbot_handler = ChatbotHandler(chatbot_service)
 
 # middleware
-auth_middleware = AuthMiddleware(cfg, project_repo)
+# auth_middleware = AuthMiddleware(cfg, project_repo)
 
 v1_router = APIRouter(prefix="/chatbot/api/v1/{project_id}")
 
