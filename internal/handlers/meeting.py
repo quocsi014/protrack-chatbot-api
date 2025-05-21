@@ -40,6 +40,7 @@ class MeetingHandler:
                 project_id=project_id,
                 meeting_id=req.meeting_id,
                 token=req.token,
+                call_id=req.call_id,
             )
             return Response(None, result)
         except HTTPException as he:
