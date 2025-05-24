@@ -16,7 +16,7 @@ services:
     container_name: chroma-server-3
     restart: unless-stopped
     ports:
-      - "8001:8000"
+      - "9000:9000"
     volumes:
       - chroma_data:/chroma/chroma
     environment:
