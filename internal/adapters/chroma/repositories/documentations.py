@@ -61,10 +61,18 @@ class DocumentationRepo:
                 ]
             }
         )
-        return File(file_id=file_id,
-                    file_name=results.get("metadatas", [{}])[
-                        0].get("file_name"),
-                    contents=results.get("documents", []),)
+
+        metadatas = results.get("metadatas", [])
+        documents = results.get("documents", [])
+
+        if not metadatas or not documents:
+            return File()
+
+        return File(
+            file_id=file_id,
+            file_name=metadatas[0].get("file_name", ""),
+            contents=documents
+        )
 
     def get_file_documents(self, project_id: str,
                            file_ids: List[str]) -> List[str]:

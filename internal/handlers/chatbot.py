@@ -5,8 +5,13 @@ from typing import List
 from pydantic import BaseModel
 
 
-class DocIdsRequest(BaseModel):
+class SummaryMeetingBody(BaseModel):
     doc_ids: List[str] = []
+    lang: str
+
+
+class SummaryFileBody(BaseModel):
+    lang: str
 
 
 class ChatbotHandler:
@@ -41,12 +46,13 @@ class ChatbotHandler:
         self,
         project_id: str = Path(...),
         meeting_id: str = Path(...),
-        body: DocIdsRequest = Body(),
+        body: SummaryMeetingBody = Body(),
     ):
         doc_ids = body.doc_ids
+        lang = body.lang
         try:
             data = self.__chatbot_service.summary_meeting(
-                project_id, meeting_id, doc_ids)
+                project_id, meeting_id, doc_ids, lang)
             return Response(None, data)
         except Exception as e:
             return Response(e, None)
@@ -55,10 +61,11 @@ class ChatbotHandler:
         self,
         project_id: str = Path(...),
         file_id: str = Path(...),
+        body: SummaryFileBody = Body(),
     ):
         try:
             data = self.__chatbot_service.summary_file(
-                project_id, file_id)
+                project_id, file_id, body.lang)
             return Response(None, data)
         except Exception as e:
             return Response(e, None)

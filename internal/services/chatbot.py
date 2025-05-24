@@ -19,14 +19,15 @@ class ChatBotService:
         self.__open_router_client = open_router_client
         self.__embedding_model = embedding_model
 
-    def summary_file(self, project_id: str, file_id: str) -> Answer:
+    def summary_file(self, project_id: str, file_id: str, locale: str = "en") -> Answer:
         file = self.__doc_repo.get_file_document(project_id, file_id)
-        return self.__open_router_client.summary_content(file.contents)
+        return self.__open_router_client.summary_content(file.contents, locale=locale)
 
     def summary_meeting(self,
                         project_id: str,
                         meeting_id: str,
                         file_ids: List[str] = None,
+                        locale: str = "en",
                         ) -> Answer:
         meeting_contents = self.__meeting_repo.get_meeting_content(
             project_id=project_id,
@@ -40,6 +41,7 @@ class ChatBotService:
         try:
             return self.__open_router_client.summary_content(meeting_contents,
                                                              files,
+                                                             locale=locale,
                                                              is_meeting=True)
         except Exception as e:
             logging.error(

@@ -69,7 +69,15 @@ class OpenRouterClient:
 
     def summary_content(self, contents: List[str],
                         files: List[File] = [],
-                        is_meeting: bool = False):
+                        is_meeting: bool = False,
+                        locale: str = "en"):
+        print("call")
+        locale_prompt = {
+            "en": "",
+            "vi": "\n\nPlease respond in Vietnamese.",
+            "ja": "\n\nPlease respond in Japanese.",
+            "fr": "\n\nPlease respond in French."
+        }
         sys_msg_content = ''' 
         You are an expert summarizer. The user will provide one or more paragraphs of text.
         Your task is to generate a concise summary of the main ideas in 3-5 sentences,
@@ -78,22 +86,29 @@ class OpenRouterClient:
         suggest what could be clarified.
 
         Please format the response in markdown, using bullet points or numbered lists as appropriate.
-        '''
+        ''' + locale_prompt.get(locale, "")
 
         if is_meeting:
             sys_msg_content = ''' 
-            You are an expert meeting analyst. The user will provide the content of a
-            meeting, which may include notes, transcripts, or summaries. Your task is to
-            analyze the provided content and generate a structured report with the following sections:
-            
-            1. **Main Content**: Summarize the key points or objectives discussed in the meeting in 3-5 sentences.
-            2. **Participants**: List all attendees, including their roles or affiliations if mentioned.
-            3. **Action Items**: Identify all tasks assigned during the meeting, specifying what needs to be done.
-            4. **Assignees**: Clearly state who is responsible for each task.
-            5. **Related Documents**: Note any documents, files, or links referenced in the meeting, or indicate if none are mentioned.
-            
-            Please present the response in a clear markdown format with appropriate headings and bullet points. If any information is unclear or missing, highlight it and suggest follow-up questions to clarify. Ensure the tone is professional and concise.
-            '''
+                You are an expert meeting analyst. The user will provide the content of a
+                meeting, which may include notes, transcripts, or summaries.
+
+                If the content is empty or lacks any meaningful information about the meeting, respond with the following sentence:
+
+                **The data for this meeting is not available in the system. Please sync it first.**
+
+                Otherwise, analyze the provided content and generate a structured report with the following sections:
+
+                1. **Main Content**: Summarize the key points or objectives discussed in the meeting in 3-5 sentences.
+                2. **Participants**: List all attendees, including their roles or affiliations if mentioned.
+                3. **Action Items**: Identify all tasks assigned during the meeting, specifying what needs to be done.
+                4. **Assignees**: Clearly state who is responsible for each task.
+                5. **Related Documents**: Note any documents, files, or links referenced in the meeting, or indicate if none are mentioned.
+
+                Please present the response in a clear markdown format with appropriate headings and bullet points. 
+                If any information is unclear or missing, highlight it and suggest follow-up questions to clarify. 
+                Ensure the tone is professional and concise.
+                ''' + locale_prompt.get(locale, "")
 
         system_msg = ChatMessage(
             role="system",
@@ -122,29 +137,29 @@ class OpenRouterClient:
         system_msg = ChatMessage(
             role="system",
             content='''
-You are an AI assistant developed for Protrack.
-The user will ask a question and always send additional context data (e.g., documents, meeting notes, internal info).
+                    You are an AI assistant developed for Protrack.
+                    The user will ask a question and always send additional context data (e.g., documents, meeting notes, internal info).
 
-Your task is to answer questions using the following rules:
+                    Your task is to answer questions using the following rules:
 
-If the user greets you or asks about your identity or role, respond with:
+                    If the user greets you or asks about your identity or role, respond with:
 
-"Tôi là AI Assistant của Protrack. Tôi có thể hỗ trợ bạn trả lời các câu hỏi liên quan đến tài liệu, họp, hoặc kiến thức chuyên môn."
+                    "Tôi là AI Assistant của Protrack. Tôi có thể hỗ trợ bạn trả lời các câu hỏi liên quan đến tài liệu, họp, hoặc kiến thức chuyên môn."
 
-If the question is about public knowledge (e.g., programming languages, tools, general concepts), answer using your pre-trained knowledge. Do not rely on the provided context.
+                    If the question is about public knowledge (e.g., programming languages, tools, general concepts), answer using your pre-trained knowledge. Do not rely on the provided context.
 
-If the question is about internal or project-specific information:
+                    If the question is about internal or project-specific information:
 
-Check if the provided context is relevant to the question.
+                    Check if the provided context is relevant to the question.
 
-If it is, use the context to answer.
+                    If it is, use the context to answer.
 
-If it's not relevant or missing, reply with:
+                    If it's not relevant or missing, reply with:
 
-data for this question is not exists
+                    data for this question is not exists
 
-Always respond in markdown format. Keep answers concise, clear, and professional.
-            '''
+                    Always respond in markdown format. Keep answers concise, clear, and professional.
+                    '''
         )
 
         related_data = ""
