@@ -84,10 +84,11 @@ class ChatBotService:
         meeting_content = []
 
         for id in file_ids:
-            file_ids += self.__doc_repo.get_file_document(
+            file_content += self.__doc_repo.get_file_document(
                 project_id, id).contents
         for id in meeting_ids:
             meeting_content += self.__meeting_repo.get_meeting_content(
                 project_id, id)
+
 
         return self.__open_router_client.ask(question, file_content, meeting_content)
