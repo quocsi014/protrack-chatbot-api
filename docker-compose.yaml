@@ -18,7 +18,7 @@ services:
     ports:
       - "9000:9000"
     volumes:
-      - chroma_data:/chroma/chroma
+      - chroma_data:/data
     environment:
       - CHROMA_SERVER_AUTH_CREDENTIALS=admin:admin
       - CHROMA_SERVER_AUTH_PROVIDER=chromadb.auth.token.TokenAuthServerProvider
